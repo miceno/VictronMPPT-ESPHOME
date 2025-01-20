@@ -187,9 +187,10 @@ void VictronComponent::async_loop() {
   // reset publishing in case buffer is empty while publishing
   publishing_ = false;
   const uint32_t now = millis();
-  if ((state_ > 0) && (now - last_transmission_ >= 200)) {
+  const uint32_t elapsed_time = now - last_transmission_;
+  if ((state_ > 0) && ( elapsed_time >= 200)) {
     // last transmission too long ago. Reset RX index.
-    ESP_LOGW(TAG, "Last transmission too long ago");
+    ESP_LOGE(TAG, "Too old data: %ldms", elapsed_time);
     state_ = 0;
   }
   if (!available())
@@ -238,7 +239,7 @@ void VictronComponent::async_loop() {
         // check that checksum value is accurate
         if (checksum_ != 0) {
           // invalid checksum, drop frame
-          ESP_LOGW(TAG, "Received invalid checksum, dropping frame: recv %d, calc %d", c, checksum_);
+          ESP_LOGW(TAG, "Bad checksum, drop frame: recv %d, calc %d", c, checksum_);
           checksum_ = 0;
           for (std::pair<std::string, std::string> element : recv_buffer_) {
             ESP_LOGD(TAG, ">> %s: %s", element.first.c_str(), element.second.c_str());
