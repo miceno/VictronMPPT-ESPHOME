@@ -88,9 +88,10 @@ void VictronComponent::dump_config() {  // NOLINT(google-readability-function-si
 
 void VictronComponent::loop() {
   const uint32_t now = millis();
-  if ((state_ > 0) && (now - last_transmission_ >= 200)) {
+  const uint8_t elapsed_time = now - last_transmission_;
+  if ((state_ > 0) && (elapsed_time >= 200)) {
     // last transmission too long ago. Reset RX index.
-    ESP_LOGW(TAG, "Last transmission too long ago");
+    ESP_LOGW(TAG, "Last publish too long ago: %ldms", elapsed_time);
     state_ = 0;
   }
 
@@ -150,6 +151,8 @@ void VictronComponent::loop() {
       }
     }
   }
+	uint32_t loop_time = millis() - now;
+	ESP_LOGW(TAG, "Loop: %ldms", loop_time);
 }
 
 static std::string charging_mode_text(int value) {
