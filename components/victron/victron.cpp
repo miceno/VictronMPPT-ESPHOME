@@ -241,11 +241,13 @@ void VictronComponent::async_loop() {
         // check that checksum value is accurate
         if (checksum_ != 0) {
           // invalid checksum, drop frame
-          ESP_LOGW(TAG, "Bad checksum, drop frame: recv %d, calc %d", c, checksum_);
+          ESP_LOGW(TAG, "Bad checksum: recv %d, calc %d", c, checksum_);
           checksum_ = 0;
+          /*
           for (std::pair<std::string, std::string> element : recv_buffer_) {
             ESP_LOGD(TAG, ">> %s: %s", element.first.c_str(), element.second.c_str());
           }
+          */
           // clear buffer with invalid data
           recv_buffer_.clear();
           return;
@@ -256,7 +258,7 @@ void VictronComponent::async_loop() {
         publishing_ = true;
       } else {
         // frame is throttled, clear buffer and skip publishing
-        ESP_LOGW(TAG, "Recv throttled, drop frame");
+        ESP_LOGD(TAG, "Skip publishing");
         recv_buffer_.clear();
       }
       // reset checksum and frame
