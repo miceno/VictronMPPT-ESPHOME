@@ -99,7 +99,7 @@ void VictronComponent::blocking_loop() {
   const uint8_t elapsed_time = now - last_transmission_;
   if ((state_ > 0) && (elapsed_time >= 200)) {
     // last transmission too long ago. Reset RX index.
-    ESP_LOGE(TAG, "Last publish %ldms ago", elapsed_time);
+    ESP_LOGE(TAG, "Too old data: %ldms", elapsed_time);
     state_ = 0;
   }
 
@@ -167,7 +167,7 @@ void VictronComponent::blocking_loop() {
   }
 	uint32_t loop_time = millis() - now;
 	if (available_data && loop_time > 5){
-		ESP_LOGI(TAG, "Loop: %ldms", loop_time);
+		ESP_LOGD(TAG, "Loop: %ldms", loop_time);
 	}
 }
 
@@ -177,7 +177,7 @@ void VictronComponent::async_loop() {
   // each value and avoid blocking too long
   if (publishing_ && recv_buffer_.size() > 0) {
     std::pair<std::string, std::string> p = recv_buffer_.back();
-    ESP_LOGI(TAG, "Send data: %s", p.first.c_str());
+    ESP_LOGD(TAG, "Send data: %s", p.first.c_str());
     handle_value_(p.first, p.second);
     recv_buffer_.pop_back();
     if (recv_buffer_.size() == 0) {
@@ -187,6 +187,7 @@ void VictronComponent::async_loop() {
   }
   // reset publishing in case buffer is empty while publishing
   publishing_ = false;
+
   const uint32_t now = millis();
   const uint32_t elapsed_time = now - last_transmission_;
   if ((state_ > 0) && ( elapsed_time >= 200)) {
@@ -255,7 +256,7 @@ void VictronComponent::async_loop() {
         publishing_ = true;
       } else {
         // frame is throttled, clear buffer and skip publishing
-        ESP_LOGD(TAG, "recv throttled, drop frame");
+        ESP_LOGW(TAG, "Recv throttled, drop frame");
         recv_buffer_.clear();
       }
       // reset checksum and frame
@@ -1171,7 +1172,7 @@ void VictronComponent::handle_value_(std::string label_, std::string value_) {
     return;
   }
 
-  ESP_LOGD(TAG, "Unhandled property: %s %s", label_.c_str(), value_.c_str());
+  ESP_LOGE(TAG, "Unhandled property: %s %s", label_.c_str(), value_.c_str());
 }
 
 void VictronComponent::publish_state_(binary_sensor::BinarySensor *binary_sensor, const bool &state) {
