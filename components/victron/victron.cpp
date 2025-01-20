@@ -142,7 +142,7 @@ void VictronComponent::loop() {
       if (c == '\r' || c == '\n') {
 				ESP_LOGD(TAG, "v:%s", value_.c_str());
         if (this->publishing_) {
-					ESP_LOGI(TAG, "pub:%s", label_.c_str());
+					ESP_LOGD(TAG, "pub:%s", label_.c_str());
           handle_value_();
         }
         state_ = 0;
