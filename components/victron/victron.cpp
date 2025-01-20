@@ -177,6 +177,7 @@ void VictronComponent::async_loop() {
   // each value and avoid blocking too long
   if (publishing_ && recv_buffer_.size() > 0) {
     std::pair<std::string, std::string> p = recv_buffer_.back();
+    ESP_LOGI(TAG, "Send data: %s", p.first.c_str());
     handle_value_(p.first, p.second);
     recv_buffer_.pop_back();
     if (recv_buffer_.size() == 0) {
