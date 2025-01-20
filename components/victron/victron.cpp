@@ -98,15 +98,7 @@ void VictronComponent::loop() {
   if (!available())
     return;
 
-	if (now - this->last_publish_ >= this->throttle_) {
-		this->last_publish_ = now;
-		this->publishing_ = true;
-	} else {
-		// If it is not time to publish sensor data, do not parse serial.
-		this->publishing_ = false;
-		return;
-	}
-	last_transmission_ = now;
+  last_transmission_ = now;
   bool available_data = false;
 
   while (available()) {
@@ -129,7 +121,7 @@ void VictronComponent::loop() {
       }
       if (c == '\t') {
         state_ = 2;
-        ESP_LOGI(TAG, "l:%s", label_.c_str());
+        ESP_LOGD(TAG, "l:%s", label_.c_str());
       } else {
         label_.push_back(c);
       }
@@ -139,11 +131,20 @@ void VictronComponent::loop() {
       if (label_ == "Checksum") {
         state_ = 0;
         // The checksum is used as end of frame indicator
+        if (now - this->last_publish_ >= this->throttle_) {
+          this->last_publish_ = now;
+          this->publishing_ = true;
+        } else {
+          this->publishing_ = false;
+        }
         continue;
       }
       if (c == '\r' || c == '\n') {
-				ESP_LOGI(TAG, "v:%s", value_.c_str());
-				handle_value_();
+				ESP_LOGD(TAG, "v:%s", value_.c_str());
+        if (this->publishing_) {
+					ESP_LOGD(TAG, "pub:%s", label_.c_str());
+          handle_value_();
+        }
         state_ = 0;
       } else {
         value_.push_back(c);
