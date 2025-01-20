@@ -102,9 +102,9 @@ void VictronComponent::loop() {
   bool available_data = false;
 
   while (available()) {
-  	available_data = true;
     uint8_t c;
     read_byte(&c);
+  	available_data = true;
     if (state_ == 0) {
       if (c == '\r' || c == '\n') {
         continue;
@@ -121,6 +121,7 @@ void VictronComponent::loop() {
       }
       if (c == '\t') {
         state_ = 2;
+        ESP_LOGI(TAG, "l:%s", label_.c_str())
       } else {
         label_.push_back(c);
       }
@@ -139,6 +140,7 @@ void VictronComponent::loop() {
         continue;
       }
       if (c == '\r' || c == '\n') {
+				ESP_LOGI(TAG, "v:%s", value_.c_str())
         if (this->publishing_) {
           handle_value_();
         }
