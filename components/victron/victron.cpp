@@ -152,7 +152,7 @@ void VictronComponent::loop() {
     }
   }
 	uint32_t loop_time = millis() - now;
-	ESP_LOGW(TAG, "Loop: %ldms", loop_time);
+	ESP_LOGD(TAG, "Loop: %ldms", loop_time);
 }
 
 static std::string charging_mode_text(int value) {
