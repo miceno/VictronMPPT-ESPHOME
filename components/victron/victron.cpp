@@ -99,7 +99,10 @@ void VictronComponent::loop() {
     return;
 
   last_transmission_ = now;
+  bool available_data = false;
+
   while (available()) {
+  	available_data = true;
     uint8_t c;
     read_byte(&c);
     if (state_ == 0) {
@@ -152,7 +155,9 @@ void VictronComponent::loop() {
     }
   }
 	uint32_t loop_time = millis() - now;
-	ESP_LOGD(TAG, "Loop: %ldms", loop_time);
+	if (available_data){
+		ESP_LOGD(TAG, "Loop: %ldms", loop_time);
+	}
 }
 
 static std::string charging_mode_text(int value) {
