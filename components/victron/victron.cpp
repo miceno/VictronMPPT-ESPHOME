@@ -121,7 +121,7 @@ void VictronComponent::loop() {
       }
       if (c == '\t') {
         state_ = 2;
-        ESP_LOGI(TAG, "l:%s", label_.c_str())
+        ESP_LOGI(TAG, "l:%s", label_.c_str());
       } else {
         label_.push_back(c);
       }
@@ -140,8 +140,9 @@ void VictronComponent::loop() {
         continue;
       }
       if (c == '\r' || c == '\n') {
-				ESP_LOGI(TAG, "v:%s", value_.c_str())
+				ESP_LOGI(TAG, "v:%s", value_.c_str());
         if (this->publishing_) {
+					ESP_LOGI(TAG, "pub");
           handle_value_();
         }
         state_ = 0;
