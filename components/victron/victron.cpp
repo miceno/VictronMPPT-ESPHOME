@@ -158,7 +158,7 @@ void VictronComponent::loop() {
     }
   }
 	uint32_t loop_time = millis() - now;
-	if (available_data){
+	if (available_data && loop_time > 5){
 		ESP_LOGI(TAG, "Loop: %ldms", loop_time);
 	}
 }
