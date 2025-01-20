@@ -87,6 +87,14 @@ void VictronComponent::dump_config() {  // NOLINT(google-readability-function-si
 }
 
 void VictronComponent::loop() {
+  if (async_uart_) {
+    async_loop();
+  } else {
+    blocking_loop();
+  }
+}
+
+void VictronComponent::blocking_loop() {
   const uint32_t now = millis();
   const uint8_t elapsed_time = now - last_transmission_;
   if ((state_ > 0) && (elapsed_time >= 200)) {
@@ -143,7 +151,7 @@ void VictronComponent::loop() {
 				ESP_LOGD(TAG, "v:%s", value_.c_str());
         if (this->publishing_) {
 					ESP_LOGD(TAG, "pub:%s", label_.c_str());
-          handle_value_();
+          handle_value_(label_, value_);
         }
         state_ = 0;
       } else {
@@ -161,6 +169,115 @@ void VictronComponent::loop() {
 	if (available_data && loop_time > 5){
 		ESP_LOGI(TAG, "Loop: %ldms", loop_time);
 	}
+}
+
+
+void VictronComponent::async_loop() {
+  // publish one value at a time to yield to esphome between
+  // each value and avoid blocking too long
+  if (publishing_ && recv_buffer_.size() > 0) {
+    std::pair<std::string, std::string> p = recv_buffer_.back();
+    handle_value_(p.first, p.second);
+    recv_buffer_.pop_back();
+    if (recv_buffer_.size() == 0) {
+      publishing_ = false;
+    }
+    return;
+  }
+  // reset publishing in case buffer is empty while publishing
+  publishing_ = false;
+  const uint32_t now = millis();
+  if ((state_ > 0) && (now - last_transmission_ >= 200)) {
+    // last transmission too long ago. Reset RX index.
+    ESP_LOGW(TAG, "Last transmission too long ago");
+    state_ = 0;
+  }
+  if (!available())
+    return;
+
+  last_transmission_ = now;
+  uint8_t c;
+  read_byte(&c);
+  // checksum is calculated as the sum of all bytes in a frame
+  // the final checksum should be a multiple of 256 (0 in 8 bit value)
+  checksum_ += c;
+  if (state_ == 0) {
+    if (c == '\r' || c == '\n') {
+      return;
+    }
+    // reset label/value
+    label_.clear();
+    value_.clear();
+    state_ = 1;
+    if (begin_frame_ == 0) {
+      begin_frame_ = now;
+    }
+  }
+  // read label
+  if (state_ == 1) {
+    // Start of a ve.direct hex frame
+    if (c == ':') {
+      state_ = 3;
+      return;
+    }
+    if (c == '\t') {
+      // end of label received, start reading value
+      state_ = 2;
+    } else {
+      // update label
+      label_.push_back(c);
+    }
+    return;
+  }
+  // read value
+  if (state_ == 2) {
+    // The checksum is used as end of frame indicator
+    if (label_ == "Checksum") {
+      state_ = 0;
+      if (begin_frame_ - this->last_publish_ >= this->throttle_) {
+        // check that checksum value is accurate
+        if (checksum_ != 0) {
+          // invalid checksum, drop frame
+          ESP_LOGW(TAG, "Received invalid checksum, dropping frame: recv %d, calc %d", c, checksum_);
+          checksum_ = 0;
+          for (std::pair<std::string, std::string> element : recv_buffer_) {
+            ESP_LOGD(TAG, ">> %s: %s", element.first.c_str(), element.second.c_str());
+          }
+          // clear buffer with invalid data
+          recv_buffer_.clear();
+          return;
+        }
+        this->last_publish_ = begin_frame_;
+        // full buffer received, with valid checksum
+        // set state to publishing to publish the values in the buffer
+        publishing_ = true;
+      } else {
+        // frame is throttled, clear buffer and skip publishing
+        ESP_LOGD(TAG, "recv throttled, drop frame");
+        recv_buffer_.clear();
+      }
+      // reset checksum and frame
+      checksum_ = 0;
+      begin_frame_ = now;
+      return;
+    }
+    if (c == '\r' || c == '\n') {
+      // end of value received, add label/value to buffer
+      recv_buffer_.insert(recv_buffer_.begin(), std::make_pair(label_, value_));
+      state_ = 0;
+    } else {
+      // update value
+      value_.push_back(c);
+    }
+  }
+  // Discard ve.direct hex frame
+  if (state_ == 3) {
+    if (c == '\r' || c == '\n') {
+      state_ = 0;
+      checksum_ = 0;
+      recv_buffer_.clear();
+    }
+  }
 }
 
 static std::string charging_mode_text(int value) {
@@ -663,7 +780,7 @@ static std::string off_reason_text(uint32_t mask) {
   return value_list;
 }
 
-void VictronComponent::handle_value_() {
+void VictronComponent::handle_value_(std::string label_, std::string value_) {
   int value;
 
   if (label_ == "V") {
