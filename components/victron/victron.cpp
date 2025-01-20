@@ -91,7 +91,7 @@ void VictronComponent::loop() {
   const uint8_t elapsed_time = now - last_transmission_;
   if ((state_ > 0) && (elapsed_time >= 200)) {
     // last transmission too long ago. Reset RX index.
-    ESP_LOGW(TAG, "Last publish too long ago: %ldms", elapsed_time);
+    ESP_LOGE(TAG, "Last publish too long ago: %ldms", elapsed_time);
     state_ = 0;
   }
 
