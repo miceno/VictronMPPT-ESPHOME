@@ -182,6 +182,7 @@ void VictronComponent::async_loop() {
     recv_buffer_.pop_back();
     if (recv_buffer_.size() == 0) {
       publishing_ = false;
+      ESP_LOGI(TAG, "No data to send");
     }
     return;
   }
