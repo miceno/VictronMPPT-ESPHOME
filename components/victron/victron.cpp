@@ -182,7 +182,7 @@ void VictronComponent::async_loop() {
     recv_buffer_.pop_back();
     if (recv_buffer_.size() == 0) {
       publishing_ = false;
-      ESP_LOGI(TAG, "No data to send");
+      ESP_LOGD(TAG, "No data to send");
     }
     return;
   }
@@ -269,8 +269,7 @@ void VictronComponent::async_loop() {
     }
     if (c == '\r' || c == '\n') {
       // end of value received, add label/value to buffer
-      ESP_LOGI(TAG, "cap: %d", recv_buffer_.capacity());
-      recv_buffer_.insert(recv_buffer_.begin(), std::make_pair(label_, value_));
+      recv_buffer_.push_back(std::make_pair(label_, value_));
       state_ = 0;
     } else {
       // update value
