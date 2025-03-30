@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <utility>
 #include "esphome/core/component.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/sensor/sensor.h"
@@ -15,6 +17,7 @@ class VictronComponent : public uart::UARTDevice, public Component {
   void set_load_state_binary_sensor(binary_sensor::BinarySensor *load_state_binary_sensor) {
     load_state_binary_sensor_ = load_state_binary_sensor;
   }
+  void set_async_uart(bool async_uart) { this->async_uart_ = async_uart; }
   void set_relay_state_binary_sensor(binary_sensor::BinarySensor *relay_state_binary_sensor) {
     relay_state_binary_sensor_ = relay_state_binary_sensor;
   }
@@ -205,11 +208,13 @@ class VictronComponent : public uart::UARTDevice, public Component {
 
   void dump_config() override;
   void loop() override;
+  void async_loop();
+  void blocking_loop();
 
   float get_setup_priority() const override { return setup_priority::DATA; }
 
  protected:
-  void handle_value_();
+  void handle_value_(std::string label_, std::string value_);
   void publish_state_(binary_sensor::BinarySensor *binary_sensor, const bool &state);
   void publish_state_(sensor::Sensor *sensor, float value);
   void publish_state_(text_sensor::TextSensor *text_sensor, const std::string &state);
@@ -287,13 +292,17 @@ class VictronComponent : public uart::UARTDevice, public Component {
   text_sensor::TextSensor *alarm_reason_text_sensor_{nullptr};
   text_sensor::TextSensor *model_description_text_sensor_{nullptr};
 
-  bool publishing_{true};
   int state_{0};
+  bool async_uart_{false};
+  bool publishing_{false};
   std::string label_;
   std::string value_;
+  uint32_t begin_frame_{0};
   uint32_t last_transmission_{0};
   uint32_t last_publish_{0};
   uint32_t throttle_{0};
+  uint8_t checksum_{0};
+  std::vector<std::pair<std::string, std::string>> recv_buffer_{};
 };
 
 }  // namespace victron

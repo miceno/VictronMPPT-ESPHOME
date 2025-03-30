@@ -87,10 +87,19 @@ void VictronComponent::dump_config() {  // NOLINT(google-readability-function-si
 }
 
 void VictronComponent::loop() {
+  if (async_uart_) {
+    async_loop();
+  } else {
+    blocking_loop();
+  }
+}
+
+void VictronComponent::blocking_loop() {
   const uint32_t now = millis();
-  if ((state_ > 0) && (now - last_transmission_ >= 200)) {
+  const uint8_t elapsed_time = now - last_transmission_;
+  if ((state_ > 0) && (elapsed_time >= 200)) {
     // last transmission too long ago. Reset RX index.
-    ESP_LOGW(TAG, "Last transmission too long ago");
+    ESP_LOGE(TAG, "Too old data: %ldms", elapsed_time);
     state_ = 0;
   }
 
@@ -98,9 +107,12 @@ void VictronComponent::loop() {
     return;
 
   last_transmission_ = now;
+  bool available_data = false;
+
   while (available()) {
     uint8_t c;
     read_byte(&c);
+  	available_data = true;
     if (state_ == 0) {
       if (c == '\r' || c == '\n') {
         continue;
@@ -117,6 +129,7 @@ void VictronComponent::loop() {
       }
       if (c == '\t') {
         state_ = 2;
+        ESP_LOGD(TAG, "l:%s", label_.c_str());
       } else {
         label_.push_back(c);
       }
@@ -135,8 +148,10 @@ void VictronComponent::loop() {
         continue;
       }
       if (c == '\r' || c == '\n') {
+				ESP_LOGD(TAG, "v:%s", value_.c_str());
         if (this->publishing_) {
-          handle_value_();
+					ESP_LOGD(TAG, "pub:%s", label_.c_str());
+          handle_value_(label_, value_);
         }
         state_ = 0;
       } else {
@@ -148,6 +163,125 @@ void VictronComponent::loop() {
       if (c == '\r' || c == '\n') {
         state_ = 0;
       }
+    }
+  }
+	uint32_t loop_time = millis() - now;
+	if (available_data && loop_time > 5){
+		ESP_LOGD(TAG, "Loop: %ldms", loop_time);
+	}
+}
+
+
+void VictronComponent::async_loop() {
+  // publish one value at a time to yield to esphome between
+  // each value and avoid blocking too long
+  if (publishing_ && recv_buffer_.size() > 0) {
+    std::pair<std::string, std::string> p = recv_buffer_.back();
+    ESP_LOGD(TAG, "Send data: %s", p.first.c_str());
+    handle_value_(p.first, p.second);
+    recv_buffer_.pop_back();
+    if (recv_buffer_.size() == 0) {
+      publishing_ = false;
+      ESP_LOGD(TAG, "No data to send");
+    }
+    return;
+  }
+  // reset publishing in case buffer is empty while publishing
+  publishing_ = false;
+
+  const uint32_t now = millis();
+  const uint32_t elapsed_time = now - last_transmission_;
+  if ((state_ > 0) && ( elapsed_time >= 200)) {
+    // last transmission too long ago. Reset RX index.
+    ESP_LOGE(TAG, "Too old data: %ldms", elapsed_time);
+    state_ = 0;
+  }
+  if (!available())
+    return;
+
+  last_transmission_ = now;
+  uint8_t c;
+  read_byte(&c);
+  // checksum is calculated as the sum of all bytes in a frame
+  // the final checksum should be a multiple of 256 (0 in 8 bit value)
+  checksum_ += c;
+  if (state_ == 0) {
+    if (c == '\r' || c == '\n') {
+      return;
+    }
+    // reset label/value
+    label_.clear();
+    value_.clear();
+    state_ = 1;
+    if (begin_frame_ == 0) {
+      begin_frame_ = now;
+    }
+  }
+  // read label
+  if (state_ == 1) {
+    // Start of a ve.direct hex frame
+    if (c == ':') {
+      state_ = 3;
+      return;
+    }
+    if (c == '\t') {
+      // end of label received, start reading value
+      state_ = 2;
+    } else {
+      // update label
+      label_.push_back(c);
+    }
+    return;
+  }
+  // read value
+  if (state_ == 2) {
+    // The checksum is used as end of frame indicator
+    if (label_ == "Checksum") {
+      state_ = 0;
+      if (begin_frame_ - this->last_publish_ >= this->throttle_) {
+        // check that checksum value is accurate
+        if (checksum_ != 0) {
+          // invalid checksum, drop frame
+          ESP_LOGW(TAG, "Bad checksum: recv %d, calc %d", c, checksum_);
+          checksum_ = 0;
+          /*
+          for (std::pair<std::string, std::string> element : recv_buffer_) {
+            ESP_LOGD(TAG, ">> %s: %s", element.first.c_str(), element.second.c_str());
+          }
+          */
+          // clear buffer with invalid data
+          recv_buffer_.clear();
+          return;
+        }
+        this->last_publish_ = begin_frame_;
+        // full buffer received, with valid checksum
+        // set state to publishing to publish the values in the buffer
+        publishing_ = true;
+      } else {
+        // frame is throttled, clear buffer and skip publishing
+        ESP_LOGD(TAG, "Skip publishing");
+        recv_buffer_.clear();
+      }
+      // reset checksum and frame
+      checksum_ = 0;
+      begin_frame_ = now;
+      return;
+    }
+    if (c == '\r' || c == '\n') {
+      // end of value received, add label/value to buffer
+      recv_buffer_.push_back(std::make_pair(label_, value_));
+      state_ = 0;
+    } else {
+      // update value
+      value_.push_back(c);
+    }
+  }
+  // Discard ve.direct hex frame
+  if (state_ == 3) {
+    if (c == '\r' || c == '\n') {
+      state_ = 0;
+      checksum_ = 0;
+      recv_buffer_.clear();
     }
   }
 }
@@ -654,7 +788,7 @@ static std::string off_reason_text(uint32_t mask) {
   return value_list;
 }
 
-void VictronComponent::handle_value_() {
+void VictronComponent::handle_value_(std::string label_, std::string value_) {
   int value;
 
   if (label_ == "V") {
@@ -1043,7 +1177,7 @@ void VictronComponent::handle_value_() {
     return;
   }
 
-  ESP_LOGD(TAG, "Unhandled property: %s %s", label_.c_str(), value_.c_str());
+  ESP_LOGE(TAG, "Unhandled property: %s %s", label_.c_str(), value_.c_str());
 }
 
 void VictronComponent::publish_state_(binary_sensor::BinarySensor *binary_sensor, const bool &state) {
