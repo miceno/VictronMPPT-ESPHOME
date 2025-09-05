@@ -1,4 +1,6 @@
 # =======================================================================
+from dataclasses import dataclass
+from typing import List
 
 G = [0, 0, 0, 0, 64, 0, 76, 0, 0, 49, 0, 0, 0, 25, 8, 71,
     41, 0, 48, 0, 8, 0, 5, 72, 53, 0, 10, 55, 0, 28, 0, 70, 0, 0, 40, 0,
@@ -16,17 +18,30 @@ def perfect_hash(key):
 
 # ============================ Sanity check =============================
 
-K = ["V", "V2", "V3", "VS", "VM", "DM", "VPV", "PPV", "I",
+original_K = ["V", "V2", "V3", "VS", "VM", "DM", "VPV", "PPV", "I",
     "I2", "I3", "IL", "LOAD", "T", "P", "CE", "SOC", "TTG", "Alarm",
     "Relay", "AR", "OR", "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8",
     "H9", "H10", "H11", "H12", "H13", "H14", "H15", "H16", "H17", "H18",
     "H19", "H20", "H21", "H22", "H23", "ERR", "CS", "BMV", "FW", "FWE",
-    "PID", "SER", "HC", "HSDS", "MODE", "AC_OUT_V", "AC_OUT_I", "AC_OUT_S",
+    "PID", "SER#", "HC", "HSDS", "MODE", "AC_OUT_V", "AC_OUT_I", "AC_OUT_S",
     "WARN", "MPPT", "MON", "Checksum"]
-assert len(K) == 62
 
 def calc_char_sum(s: str) -> int:
     return sum(ord(c) for c in s) + ord(s[-1]) * 10
+
+
+def read_keywords(file_path: str) -> List[str]:
+    keywords = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            name = line.strip()
+            if not name:
+                continue
+            keywords.append(name)
+    return keywords
+
+K = read_keywords("keywords.txt")
+assert len(K) == 62
 
 for h, k in enumerate(K):
     print(f"{h} {k} {calc_char_sum(k)} {perfect_hash(k)}")
