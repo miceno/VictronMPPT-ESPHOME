@@ -245,49 +245,41 @@ static std::string error_code_text(int value) {
 }
 
 static std::string warning_code_text(int value) {
-  switch (value) {
-    case 0:
-      return "No warning";
-    case 1:
-      return "Low Voltage";
-    case 2:
-      return "High Voltage";
-    case 4:
-      return "Low SOC";
-    case 8:
-      return "Low Starter Voltage";
-    case 16:
-      return "High Starter Voltage";
-    case 32:
-      return "Low Temperature";
-    case 64:
-      return "High Temperature";
-    case 128:
-      return "Mid Voltage";
-    case 256:
-      return "Overload";
-    case 512:
-      return "DC-ripple";
-    case 1024:
-      return "Low V AC out";
-    case 2048:
-      return "High V AC out";
-    default:
-      return "Multiple warnings";
+  static const char *const warning_texts[] = {
+    "No warning",           // 0
+    "Low Voltage",          // 1
+    "High Voltage",         // 2
+    "Low SOC",              // 4
+    "Low Starter Voltage",  // 8
+    "High Starter Voltage", // 16
+    "Low Temperature",      // 32
+    "High Temperature",     // 64
+    "Mid Voltage",          // 128
+    "Overload",             // 256
+    "DC-ripple",            // 512
+    "Low V AC out",         // 1024
+    "High V AC out"         // 2048
+  };
+  if (value == 0)
+    return warning_texts[0];
+  if ((value & (value - 1)) == 0) {
+    unsigned int idx = __builtin_ctz(value);
+    if (idx + 1 < sizeof(warning_texts) / sizeof(warning_texts[0]))
+      return warning_texts[idx + 1];
   }
+  return "Multiple warnings";
 }
 
+// Use a static array for efficient lookup
 static std::string tracking_mode_text(int value) {
-  switch (value) {
-    case 0:
-      return "Off";
-    case 1:
-      return "Limited";
-    case 2:
-      return "Active";
-    default:
-      return "Unknown";
-  }
+  static const char *const tracking_modes[] = {
+    "Off",
+    "Limited",
+    "Active"
+  };
+  if (value >= 0 && value < 3)
+    return tracking_modes[value];
+  return "Unknown";
 }
 
 static std::string device_mode_text(int value) {
@@ -305,47 +297,32 @@ static std::string device_mode_text(int value) {
   }
 }
 
+// Use a static array and offset for efficient lookup
 static std::string dc_monitor_mode_text(int value) {
-  switch (value) {
-    case -9:
-      return "Solar charger";
-    case -8:
-      return "Wind turbine";
-    case -7:
-      return "Shaft generator";
-    case -6:
-      return "Alternator";
-    case -5:
-      return "Fuel cell";
-    case -4:
-      return "Water generator";
-    case -3:
-      return "DC/DC charger";
-    case -2:
-      return "AC charger";
-    case -1:
-      return "Generic source";
-    case 0:
-      return "Battery monitor (BMV)";
-    case 1:
-      return "Generic load";
-    case 2:
-      return "Electric drive";
-    case 3:
-      return "Fridge";
-    case 4:
-      return "Water pump";
-    case 5:
-      return "Bilge pump";
-    case 6:
-      return "DC system";
-    case 7:
-      return "Inverter";
-    case 8:
-      return "Water heater";
-    default:
-      return "Unknown";
-  }
+  static const char *const dc_monitor_modes[] = {
+    "Solar charger",    // -9
+    "Wind turbine",     // -8
+    "Shaft generator",  // -7
+    "Alternator",       // -6
+    "Fuel cell",        // -5
+    "Water generator",  // -4
+    "DC/DC charger",    // -3
+    "AC charger",       // -2
+    "Generic source",   // -1
+    "Battery monitor (BMV)", // 0
+    "Generic load",     // 1
+    "Electric drive",   // 2
+    "Fridge",           // 3
+    "Water pump",       // 4
+    "Bilge pump",       // 5
+    "DC system",        // 6
+    "Inverter",         // 7
+    "Water heater"      // 8
+  };
+  int offset = value + 9;
+  if (offset >= 0 && offset < (int)(sizeof(dc_monitor_modes)/sizeof(dc_monitor_modes[0])))
+    return dc_monitor_modes[offset];
+  return "Unknown";
 }
 
 static std::string device_type_text(int value) {
