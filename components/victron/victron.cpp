@@ -1219,12 +1219,15 @@ void VictronComponent::handle_value_hash_() {
       break;
 
     case 981:  // OR
+      {
+      // Parse the off reason bitmask
       auto off_reason_bitmask = parse_hex<uint32_t>(value_.substr(2, value_.size() - 2));
       if (off_reason_bitmask) {
         this->publish_state_(off_reason_bitmask_sensor_, *off_reason_bitmask);
         this->publish_state_(off_reason_text_sensor_, off_reason_text(*off_reason_bitmask));
       }
       break;
+      }
 
     case 611:  // H1
       // mAh -> Ah
