@@ -1140,7 +1140,7 @@ void VictronComponent::handle_value_hash_() {
 
   int label_hash = calc_char_sum(label_.c_str());
   switch (label_hash) {
-    case 946:                                                                         // V
+    case 946:  // V
       this->publish_state_(battery_voltage_sensor_, atoi(value_.c_str()) / 1000.0f);  // NOLINT(cert-err34-c)
       break;
 
@@ -1176,7 +1176,7 @@ void VictronComponent::handle_value_hash_() {
       this->publish_state_(panel_voltage_sensor_, atoi(value_.c_str()) / 1000.0f);  // NOLINT(cert-err34-c)
       break;
 
-    case 1106:                                                          // PPV
+    case 1106:  // PPV
       this->publish_state_(panel_power_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
@@ -1195,7 +1195,7 @@ void VictronComponent::handle_value_hash_() {
       this->publish_state_(battery_current_3_sensor_, atoi(value_.c_str()) / 1000.0f);  // NOLINT(cert-err34-c)
       break;
 
-    case 909:                                                                      // IL
+    case 909:  // IL
       this->publish_state_(load_current_sensor_, atoi(value_.c_str()) / 1000.0f);  // NOLINT(cert-err34-c)
       break;
 
@@ -1211,7 +1211,7 @@ void VictronComponent::handle_value_hash_() {
       }
       break;
 
-    case 880:                                                                   // P
+    case 880:  // P
       this->publish_state_(instantaneous_power_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
@@ -1225,7 +1225,7 @@ void VictronComponent::handle_value_hash_() {
       this->publish_state_(state_of_charge_sensor_, atoi(value_.c_str()) * 0.10f);  // NOLINT(cert-err34-c)
       break;
 
-    case 949:                                                          // TTG
+    case 949:  // TTG
       this->publish_state_(time_to_go_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
@@ -1237,7 +1237,7 @@ void VictronComponent::handle_value_hash_() {
       this->publish_state_(relay_state_binary_sensor_, value_ == "ON" || value_ == "On");
       break;
 
-    case 967:                                                                                  // AR
+    case 967:   // AR
       this->publish_state_(alarm_reason_text_sensor_, error_code_text(atoi(value_.c_str())));  // NOLINT(cert-err34-c)
       break;
 
@@ -1267,11 +1267,11 @@ void VictronComponent::handle_value_hash_() {
                            atoi(value_.c_str()) / 1000.0);  // NOLINT(cert-err34-c)
       break;
 
-    case 644:                                                                       // H4
+    case 644:  // H4
       this->publish_state_(number_of_charge_cycles_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
-    case 655:                                                                         // H5
+    case 655:  // H5
       this->publish_state_(number_of_full_discharges_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
@@ -1313,11 +1313,11 @@ void VictronComponent::handle_value_hash_() {
       }
       break;
 
-    case 660:                                                                                 // H11
+    case 660:  // H11
       this->publish_state_(number_of_low_main_voltage_alarms_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
-    case 671:                                                                                  // H12
+    case 671:  // H12
       this->publish_state_(number_of_high_main_voltage_alarms_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
@@ -1355,33 +1355,33 @@ void VictronComponent::handle_value_hash_() {
       this->publish_state_(amount_of_charged_energy_sensor_, atoi(value_.c_str()) * 10.0f);  // NOLINT(cert-err34-c)
       break;
 
-    case 748:                                                                   // H19
+    case 748:  // H19
       this->publish_state_(yield_total_sensor_, atoi(value_.c_str()) * 10.0f);  // NOLINT(cert-err34-c)
       break;
 
-    case 650:                                                                   // H20
+    case 650:  // H20
       this->publish_state_(yield_today_sensor_, atoi(value_.c_str()) * 10.0f);  // NOLINT(cert-err34-c)
       break;
 
-    case 661:                                                               // H21
+    case 661:  // H21
       this->publish_state_(max_power_today_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
-    case 672:                                                                       // H22
+    case 672:  // H22
       this->publish_state_(yield_yesterday_sensor_, atoi(value_.c_str()) * 10.0f);  // NOLINT(cert-err34-c)
       break;
 
-    case 683:                                                                   // H23
+    case 683:  // H23
       this->publish_state_(max_power_yesterday_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
-    case 1053:                       // ERR
+    case 1053: // ERR
       value = atoi(value_.c_str());  // NOLINT(cert-err34-c)
       this->publish_state_(error_code_sensor_, value);
       this->publish_state_(error_text_sensor_, error_code_text(value));
       break;
 
-    case 980:                        // CS
+    case 980:  // CS
       value = atoi(value_.c_str());  // NOLINT(cert-err34-c)
       this->publish_state_(charging_mode_id_sensor_, (float) value);
       this->publish_state_(charging_mode_text_sensor_, charging_mode_text(value));
@@ -1421,21 +1421,21 @@ void VictronComponent::handle_value_hash_() {
       this->publish_state_once_(serial_number_text_sensor_, value_);
       break;
 
-    case 809:  // HC#
+    case 809:  // HC
       this->publish_state_once_(hardware_revision_text_sensor_, value_);
       break;
 
-    case 1136:                                                         // HSDS
+    case 1136: // HSDS
       this->publish_state_(day_number_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
-    case 983:                        // MODE
+    case 983:  // MODE
       value = atoi(value_.c_str());  // NOLINT(cert-err34-c)
       this->publish_state_(device_mode_id_sensor_, (float) value);
       this->publish_state_(device_mode_text_sensor_, device_mode_text(value));
       break;
 
-    case 1516:                                                                      // AC_OUT_V
+    case 1516:  // AC_OUT_V
       this->publish_state_(ac_out_voltage_sensor_, atoi(value_.c_str()) / 100.0f);  // NOLINT(cert-err34-c)
       break;
 
@@ -1444,23 +1444,23 @@ void VictronComponent::handle_value_hash_() {
                            std::max(0.0f, atoi(value_.c_str()) / 10.0f));  // NOLINT(cert-err34-c)
       break;
 
-    case 1483:                                                                    // AC_OUT_S
+    case 1483:  // AC_OUT_S
       this->publish_state_(ac_out_apparent_power_sensor_, atoi(value_.c_str()));  // NOLINT(cert-err34-c)
       break;
 
-    case 1092:                       // WARN
+    case 1092:  // WARN
       value = atoi(value_.c_str());  // NOLINT(cert-err34-c)
       this->publish_state_(warning_code_sensor_, value);
       this->publish_state_(warning_text_sensor_, warning_code_text(value));
       break;
 
-    case 1161:                       // MPPT
+    case 1161:  // MPPT
       value = atoi(value_.c_str());  // NOLINT(cert-err34-c)
       this->publish_state_(tracking_mode_id_sensor_, (float) value);
       this->publish_state_(tracking_mode_text_sensor_, tracking_mode_text(value));
       break;
 
-    case 1014:                       // MON
+    case 1014:  // MON
       value = atoi(value_.c_str());  // NOLINT(cert-err34-c)
       this->publish_state_(dc_monitor_mode_id_sensor_, (float) value);
       this->publish_state_(dc_monitor_mode_text_sensor_, dc_monitor_mode_text(value));
