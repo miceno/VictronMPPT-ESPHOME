@@ -246,7 +246,22 @@ static const struct { int code; uint8_t idx; } error_code_map[] PROGMEM = {
   {119, 19}
 };
 
-static std::string error_code_text(int value) {
+
+static const char *error_code_text(int value) {
+  const size_t MAX_ERROR_CODE_TEXT_LENGTH = 54;
+  static char error_code_text_value[MAX_ERROR_CODE_TEXT_LENGTH] = {0};
+  uint8_t idx = 20; // Default to "Unknown"
+  for (uint8_t i = 0; i < sizeof(error_code_map)/sizeof(error_code_map[0]); i++) {
+    if (value == pgm_read_word(&error_code_map[i].code)) {
+      idx = pgm_read_byte(&error_code_map[i].idx);
+      break;
+    }
+  }
+  strcpy_P(error_code_text_value, error_code_strings[idx]);
+  return &error_code_text_value[0];
+}
+
+static std::string error_code_text_legacy(int value) {
   uint8_t idx = 20; // Default to "Unknown"
   for (uint8_t i = 0; i < sizeof(error_code_map)/sizeof(error_code_map[0]); i++) {
     if (value == pgm_read_word(&error_code_map[i].code)) {
