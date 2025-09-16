@@ -140,7 +140,7 @@ void VictronComponent::loop() {
       }
       if (c == '\r' || c == '\n') {
         if (this->publishing_) {
-          handle_value_hash_();
+          handle_value_();
         }
         state_ = 0;
       } else {
