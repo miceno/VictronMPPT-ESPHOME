@@ -198,7 +198,7 @@ static std::string charging_mode_text(int value) {
 }
 
 // Error strings stored in PROGMEM
-static const char *error_code_strings[20] PROGMEM = {
+static const char *error_code_strings[21] PROGMEM = {
   "No error",
   "Battery voltage too high",
   "Charger temperature too high",
