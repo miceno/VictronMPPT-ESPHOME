@@ -9,7 +9,7 @@ namespace victron {
 static const char *const TAG = "victron";
 
 static const uint8_t OFF_REASONS_SIZE = 16;
-static const char *const OFF_REASONS[OFF_REASONS_SIZE] = {
+static const char *const OFF_REASONS[OFF_REASONS_SIZE] PROGMEM = {
     "No input power",                       // 0000 0000 0000 0001
     "Switched off (power switch)",          // 0000 0000 0000 0010
     "Switched off (device mode register)",  // 0000 0000 0000 0100
@@ -197,51 +197,66 @@ static std::string charging_mode_text(int value) {
   }
 }
 
+// Error strings stored in PROGMEM
+static const char *error_code_strings[20] PROGMEM = {
+  "No error",
+  "Battery voltage too high",
+  "Charger temperature too high",
+  "Charger over current",
+  "Charger current reversed",
+  "Bulk time limit exceeded",
+  "Current sensor issue",
+  "Terminals overheated",
+  "Converter issue",
+  "Input voltage too high (solar panel)",
+  "Input current too high (solar panel)",
+  "Input shutdown (excessive battery voltage)",
+  "Input shutdown (due to current flow during off mode)",
+  "Lost communication with one of devices",
+  "Synchronised charging device configuration issue",
+  "BMS connection lost",
+  "Network misconfigured",
+  "Factory calibration data lost",
+  "Invalid/incompatible firmware",
+  "User settings invalid",
+  "Unknown"
+};
+
+// Map error codes to indices in error_code_strings
+static const struct { int code; uint8_t idx; } error_code_map[] PROGMEM = {
+  {0, 0},
+  {2, 1},
+  {17, 2},
+  {18, 3},
+  {19, 4},
+  {20, 5},
+  {21, 6},
+  {26, 7},
+  {28, 8},
+  {33, 9},
+  {34, 10},
+  {38, 11},
+  {39, 12},
+  {65, 13},
+  {66, 14},
+  {67, 15},
+  {68, 16},
+  {116, 17},
+  {117, 18},
+  {119, 19}
+};
+
 static std::string error_code_text(int value) {
-  switch (value) {
-    case 0:
-      return "No error";
-    case 2:
-      return "Battery voltage too high";
-    case 17:
-      return "Charger temperature too high";
-    case 18:
-      return "Charger over current";
-    case 19:
-      return "Charger current reversed";
-    case 20:
-      return "Bulk time limit exceeded";
-    case 21:
-      return "Current sensor issue";
-    case 26:
-      return "Terminals overheated";
-    case 28:
-      return "Converter issue";
-    case 33:
-      return "Input voltage too high (solar panel)";
-    case 34:
-      return "Input current too high (solar panel)";
-    case 38:
-      return "Input shutdown (excessive battery voltage)";
-    case 39:
-      return "Input shutdown (due to current flow during off mode)";
-    case 65:
-      return "Lost communication with one of devices";
-    case 66:
-      return "Synchronised charging device configuration issue";
-    case 67:
-      return "BMS connection lost";
-    case 68:
-      return "Network misconfigured";
-    case 116:
-      return "Factory calibration data lost";
-    case 117:
-      return "Invalid/incompatible firmware";
-    case 119:
-      return "User settings invalid";
-    default:
-      return "Unknown";
+  uint8_t idx = 20; // Default to "Unknown"
+  for (uint8_t i = 0; i < sizeof(error_code_map)/sizeof(error_code_map[0]); i++) {
+    if (value == pgm_read_word(&error_code_map[i].code)) {
+      idx = pgm_read_byte(&error_code_map[i].idx);
+      break;
+    }
   }
+  char buffer[54];
+  strcpy_P(buffer, error_code_strings[idx]);
+  return std::string(buffer);
 }
 
 static std::string warning_code_text(int value) {
@@ -704,6 +719,7 @@ static std::string device_type_text(int value) {
 static std::string off_reason_text(uint32_t mask) {
   bool first = true;
   std::string value_list = "";
+  char buffer[36]; // Adjust size if any string is longer
 
   if (mask) {
     for (uint8_t i = 0; i < OFF_REASONS_SIZE; i++) {
@@ -713,7 +729,8 @@ static std::string off_reason_text(uint32_t mask) {
         } else {
           value_list.append(";");
         }
-        value_list.append(OFF_REASONS[i]);
+        strcpy_P(buffer, (PGM_P)pgm_read_ptr(&OFF_REASONS[i]));
+        value_list.append(buffer);
       }
     }
   }
