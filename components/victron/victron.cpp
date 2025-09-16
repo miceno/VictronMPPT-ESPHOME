@@ -1495,7 +1495,24 @@ void VictronComponent::publish_state_(text_sensor::TextSensor *text_sensor, cons
   text_sensor->publish_state(state);
 }
 
+void VictronComponent::publish_state_(text_sensor::TextSensor *text_sensor, const char *state) {
+  if (text_sensor == nullptr)
+    return;
+
+  text_sensor->publish_state(state);
+}
+
 void VictronComponent::publish_state_once_(text_sensor::TextSensor *text_sensor, const std::string &state) {
+  if (text_sensor == nullptr)
+    return;
+
+  if (text_sensor->has_state())
+    return;
+
+  text_sensor->publish_state(state);
+}
+
+void VictronComponent::publish_state_once_(text_sensor::TextSensor *text_sensor, const char *state) {
   if (text_sensor == nullptr)
     return;
 
