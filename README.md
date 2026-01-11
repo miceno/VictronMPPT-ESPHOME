@@ -255,3 +255,29 @@ esphome run debug-esp8266-example.yaml
 ## Thanks
 
 Big thanks for help to ssieb for the support!
+
+
+## Performance improvements
+
+You can enable different performance improvements:
+
+* In order to improve the performance of the component you can disable all unused sensors. The component will automatically detect which sensors are enabled and only parse the relevant data from the VE.Direct stream. Use flag `skip_disabled_sensors: true` to enable this feature. Default: `false`.
+* You can use a hash map to speed up the parsing of the VE.Direct data. Use flag `use_hash_map: true` to enable this feature. Default: `false`. The drawback of this feature is that adding a new label requires generating a set of unique hash values for all labels. See below how to do this.
+
+
+## Hash: How to add a new label
+
+The hash map feature requires that all labels have a unique hash value. If you want to add a new label you have to generate a hash value for it and check if it is unique.
+
+Install the perfect-hash python package, and run:
+
+```commandline
+pip3 install perfect-hash
+perfect-hash --comment "'" keywords.txt -o perfect_hash_string.py
+```
+
+Edit keywords.txt file and add the new label to the end of the file. Then run the following python script to generate hash values for all labels:
+
+```commandline
+python utils/perfect_hash_string.py
+```
